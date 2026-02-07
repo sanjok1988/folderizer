@@ -661,6 +661,299 @@ brew install exiftool
 
 ---
 
+# File Organization Script Documentation
+
+## Overview
+
+The `folderize.sh` script automatically organizes files in a folder by **file type (kind)** and **year created**. Files are moved (not copied) into organized subfolders with the structure: `Kind/Year/`.
+
+## Installation
+
+1. Save the script as `folderize.sh`
+2. Make it executable:
+
+```bash
+chmod +x folderize.sh
+```
+
+## Usage
+
+### Basic Command
+
+```bash
+./folderize.sh /path/to/folder
+```
+
+### Examples
+
+```bash
+# Organize current directory
+./folderize.sh .
+
+# Organize Downloads folder
+./folderize.sh ~/Downloads
+
+# Organize absolute path
+./folderize.sh /home/user/Documents
+```
+
+## How It Works
+
+### 1. **Scans All Files**
+The script searches for all files in the specified folder (one level deep, not recursive).
+
+### 2. **Categorizes by File Type**
+Files are organized into these categories:
+
+| Category | Extensions |
+|----------|-----------|
+| **Images** | jpg, jpeg, png, gif, bmp, tiff, tif, webp, heic, heif, raw, cr2, nef, dng, arw, orf, rw2, pef, sr2, svg, ico |
+| **PDFs** | pdf |
+| **Documents** | doc, docx, txt, rtf, odt, pages, tex, wpd, wps |
+| **Spreadsheets** | xls, xlsx, csv, ods, numbers, tsv |
+| **Presentations** | ppt, pptx, key, odp |
+| **Videos** | mp4, avi, mov, mkv, flv, wmv, webm, m4v, mpg, mpeg, 3gp, f4v |
+| **Audio** | mp3, wav, flac, aac, ogg, wma, m4a, opus, aiff |
+| **Archives** | zip, rar, 7z, tar, gz, bz2, xz, iso, dmg |
+| **Code** | js, php, py, java, cpp, c, h, cs, rb, go, rs, swift, kt, sh, bash, sql, html, css, json, xml, yaml, yml |
+| **Other** | Any unrecognized file type |
+
+### 3. **Extracts Year Information**
+The script attempts to get the file's creation/modification year in this order:
+
+1. **EXIF Metadata** (for images, requires `exiftool`)
+   - Looks for `DateTimeOriginal`
+   - Falls back to `CreateDate`
+
+2. **File Birth Time** (macOS)
+   - Uses `stat` command to get creation time
+
+3. **File Modification Time** (Linux/macOS)
+   - Gets the last modified date
+
+4. **Current Year** (fallback)
+   - Uses today's year if no date found
+
+### 4. **Creates Folder Structure**
+Organizes files into: `Kind/Year/`
+
+**Example output structure:**
+```
+Documents/
+├── Images/
+│   ├── 2023/
+│   │   ├── photo1.jpg
+│   │   └── photo2.png
+│   ├── 2024/
+│   │   ├── vacation.jpg
+│   │   └── screenshot.png
+│   └── 2025/
+│       └── recent.jpg
+├── PDFs/
+│   ├── 2023/
+│   │   └── invoice.pdf
+│   └── 2024/
+│       └── contract.pdf
+├── Videos/
+│   ├── 2023/
+│   └── 2024/
+│       └── recording.mp4
+└── Code/
+    └── 2025/
+        ├── script.js
+        └── app.py
+```
+
+### 5. **Moves Files**
+Files are **moved** (not copied), so they no longer exist in the root folder.
+
+## Output
+
+The script provides:
+
+✅ **Real-time progress**
+- Shows each folder created
+- Shows each file moved
+- Reports any failures
+
+✅ **Summary statistics**
+- Total files found
+- Successfully moved count
+- Failed moves count
+
+✅ **Breakdown by kind**
+- Number of files in each category
+
+✅ **Breakdown by year**
+- Number of files organized by year
+
+✅ **Final folder structure**
+- Lists all created directories with file counts
+
+### Example Output
+
+```
+🔍 Organizing files in: /Users/john/Downloads
+
+📁 Processing files...
+✓ Created: Images/2023
+✓ Moved: photo1.jpg → Images/2023/
+✓ Created: PDFs/2024
+✓ Moved: document.pdf → PDFs/2024/
+✓ Created: Videos/2024
+✓ Moved: video.mp4 → Videos/2024/
+
+═════════════════════════════════════════════
+📊 Summary:
+  Total files found: 42
+  Successfully moved: 42
+═════════════════════════════════════════════
+
+📂 Files by Kind:
+  Images: 18 files
+  PDFs: 8 files
+  Videos: 6 files
+  Documents: 5 files
+  Code: 3 files
+  Archives: 2 files
+
+📅 Files by Year:
+  2023: 15 files
+  2024: 22 files
+  2025: 5 files
+
+📁 Folder Structure Created:
+  Images/2023: 8 files
+  Images/2024: 7 files
+  Images/2025: 3 files
+  PDFs/2024: 8 files
+  Videos/2024: 6 files
+  Documents/2023: 3 files
+  Documents/2024: 2 files
+  Code/2025: 3 files
+  Archives/2024: 2 files
+
+✅ Done!
+```
+
+## Color-Coded Output
+
+- 🔵 **BLUE** - Information and headers
+- 🟢 **GREEN** - Successful operations and statistics
+- 🔴 **RED** - Errors and failures
+- 🟦 **CYAN** - Section labels
+
+## Requirements
+
+### Required
+- **Bash** (Linux, macOS, Windows WSL)
+- **Standard Unix utilities**: `find`, `stat`, `grep`, `sort`, `uniq`
+
+### Optional
+- **exiftool** - For extracting EXIF metadata from images (better date accuracy)
+
+Install exiftool:
+
+```bash
+# macOS
+brew install exiftool
+
+# Ubuntu/Debian
+sudo apt-get install libimage-exiftool-perl
+
+# Fedora/CentOS
+sudo dnf install perl-Image-ExifTool
+```
+
+## Important Notes
+
+⚠️ **Files are MOVED, not copied**
+- Once organized, files no longer exist in the source folder
+- Create a backup before running if unsure
+
+✅ **Safe to re-run**
+- Files already in `Kind/Year/` folders are not touched
+- Safe to run multiple times
+
+✅ **Handles special characters**
+- Works with filenames containing spaces, accents, etc.
+
+✅ **Case-insensitive**
+- Recognizes `.JPG`, `.jpg`, `.Jpg` equally
+
+## Troubleshooting
+
+### Issue: "Permission denied" error
+
+**Solution:** Check folder permissions
+```bash
+chmod 755 folderize.sh
+ls -la /path/to/folder
+```
+
+### Issue: No dates found
+
+**Solution:** Install exiftool for better date detection
+```bash
+brew install exiftool  # macOS
+sudo apt-get install libimage-exiftool-perl  # Linux
+```
+
+### Issue: Script not found
+
+**Solution:** Use full path or current directory
+```bash
+bash ./folderize.sh /path/to/folder
+# or
+bash /full/path/folderize.sh /path/to/folder
+```
+
+### Issue: Files not moving
+
+**Solution:** Check disk space and folder permissions
+```bash
+df -h  # Check disk space
+ls -ld /path/to/folder  # Check permissions
+```
+
+## Advanced Usage
+
+### Organize and keep summary
+```bash
+# Run and save output
+./folderize.sh . | tee organization.log
+```
+
+### Dry run (test without moving)
+```bash
+# Comment out "mv" lines in the script first
+# Then just observe the output
+```
+
+### Organize specific folder repeatedly
+```bash
+# Create a cron job
+0 2 * * *  /home/user/folderize.sh /home/user/Downloads
+```
+
+## License
+
+Open source - Feel free to modify and use!
+
+---
+
+## Quick Reference
+
+| Command | Result |
+|---------|--------|
+| `./folderize.sh .` | Organize current directory |
+| `./folderize.sh ~/Downloads` | Organize Downloads |
+| `./folderize.sh /full/path` | Organize absolute path |
+
+---
+
+**Created for automated file organization** 📁✨
+
 **Version:** 1.0  
 **Last Updated:** February 2026  
 **Compatibility:** macOS, Linux, Windows (WSL)
